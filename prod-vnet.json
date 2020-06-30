@@ -4,9 +4,9 @@
     "parameters": {
         "namebase": {
             "type": "string",
-            "defaultValue":"eus-vnet",
+            "defaultValue":"eus",
             "metadata":{
-                "description": "The name of the VNET."
+                "description": "The name of the VNET. where eus will be eus-vnet"
             }
         },
         "vnetAddressSpace":{
