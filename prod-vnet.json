@@ -81,7 +81,7 @@
         },
         "sourceTrustedIPAddress":{
             "type":"string",
-            "defaultValue":"24.192.52.8",
+            "defaultValue":"1.2.3.4/32",
             "metadata":{
                 "description": "This is the IP address you will manage the devices from - change this to your public IP"
             }
