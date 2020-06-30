@@ -1,0 +1,190 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "trustedUDRName":{
+            "type": "string",
+            "defaultValue":"udr-trusted"
+        },
+        "trustedDevUDRName":{
+            "type": "string",
+            "defaultValue":"udr-trustedDev"
+        },
+        "dmzUDRName": {
+            "type": "string",
+            "defaultValue":"udr-dmz"
+        },
+        "disableBgpRoutePropagation":{
+            "type": "string",
+            "defaultValue":"false"
+        },
+        "trustedInterfaceIP":{
+            "type": "string",
+            "defaultValue":"10.210.12.253"
+        },
+        "trustedDevInterfaceIP":{
+            "type": "string",
+            "defaultValue":"10.210.17.253"
+        },
+        "dmzInterfaceIP":{
+            "type": "string",
+            "defaultValue":"10.210.15.253"
+        },
+        "trustedFWSubnetAddressSpace":{
+            "type": "string",
+            "defaultValue":"10.210.12.0/23"
+        },
+        "trustedActualSubnetAddressSpace":{
+            "type": "string",
+            "defaultValue":"10.210.10.0/23"
+        },
+        "trustedDevFWSubnetAddressSpace":{
+            "type": "string",
+            "defaultValue":"10.210.17.0/24"
+        },
+        "trustedDevActualSubnetAddressSpace":{
+            "type": "string",
+            "defaultValue":"10.210.16.0/24"
+        },
+        "dmzFWSubnetAddressSpace":{
+            "type": "string",
+            "defaultValue": "10.210.15.0/24"
+        },
+        "dmzActualSubnetAddressSpace":{
+            "type": "string",
+            "defaultValue": "10.210.14.0/24"
+        },
+        "vnetAddressSpace":{
+            "type": "string",
+            "defaultValue": "10.210.0.0/16"
+        }
+    },
+    "resources": [
+        {
+            "name": "[parameters('trustedUDRName')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2019-02-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "properties": {
+                "disableBgpRoutePropagation": "[parameters('disableBgpRoutePropagation')]",
+            "routes":[
+                {
+                "name": "Default",
+                "properties":{
+                    "addressPrefix":"0.0.0.0/0",
+                    "nextHopType":"VirtualAppliance",
+                    "nextHopIpAddress":"[parameters('trustedInterfaceIP')]"
+                }
+                },
+                {
+                "name": "TrustedActual",
+                "properties":{
+                    "addressPrefix":"[parameters('trustedActualSubnetAddressSpace')]",
+                    "nextHopType":"VnetLocal"
+                }
+                },
+                {
+                "name": "TrustedFW",
+                "properties":{
+                    "addressPrefix":"[parameters('trustedFWSubnetAddressSpace')]",
+                    "nextHopType":"VnetLocal"
+                }
+                },
+                {
+                "name": "VNET",
+                "properties":{
+                    "addressPrefix":"[parameters('vnetAddressSpace')]",
+                    "nextHopType":"VirtualAppliance",
+                    "nextHopIpAddress":"[parameters('trustedInterfaceIP')]"
+                }
+                }
+            ]
+            }
+        },
+        {
+            "name": "[parameters('trustedDevUDRName')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2019-02-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "properties": {
+                "disableBgpRoutePropagation": "[parameters('disableBgpRoutePropagation')]",
+            "routes":[
+                {
+                "name": "Default",
+                "properties":{
+                    "addressPrefix":"0.0.0.0/0",
+                    "nextHopType":"VirtualAppliance",
+                    "nextHopIpAddress":"[parameters('trustedDevInterfaceIP')]"
+                }
+                },
+                {
+                "name": "TrustedDevActual",
+                "properties":{
+                    "addressPrefix":"[parameters('trustedDevActualSubnetAddressSpace')]",
+                    "nextHopType":"VnetLocal"
+                }
+                },
+                {
+                "name": "TrustedDevFW",
+                "properties":{
+                    "addressPrefix":"[parameters('trustedDevFWSubnetAddressSpace')]",
+                    "nextHopType":"VnetLocal"
+                }
+                },
+                {
+                "name": "VNET",
+                "properties":{
+                    "addressPrefix":"[parameters('vnetAddressSpace')]",
+                    "nextHopType":"VirtualAppliance",
+                    "nextHopIpAddress":"[parameters('trustedInterfaceIP')]"
+                }
+                }
+            ]
+            }
+        },
+        {
+            "name": "[parameters('dmzUDRName')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2019-02-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "properties": {
+                "disableBgpRoutePropagation": "[parameters('disableBgpRoutePropagation')]",
+            "routes":[
+                {
+                "name": "Default",
+                "properties":{
+                    "addressPrefix":"0.0.0.0/0",
+                    "nextHopType":"VirtualAppliance",
+                    "nextHopIpAddress":"[parameters('dmzInterfaceIP')]"
+                }
+                },
+                {
+                "name": "DMZActual",
+                "properties":{
+                    "addressPrefix":"[parameters('dmzActualSubnetAddressSpace')]",
+                    "nextHopType":"VnetLocal"
+                }
+                },
+                {
+                "name": "DMZFW",
+                "properties":{
+                    "addressPrefix":"[parameters('dmzFWSubnetAddressSpace')]",
+                    "nextHopType":"VnetLocal"
+                }
+                },
+                {
+                "name": "VNET",
+                "properties":{
+                    "addressPrefix":"[parameters('vnetAddressSpace')]",
+                    "nextHopType":"VirtualAppliance",
+                    "nextHopIpAddress":"[parameters('dmzInterfaceIP')]"
+                }
+                }
+            ]
+            }
+        }
+    ]
+}

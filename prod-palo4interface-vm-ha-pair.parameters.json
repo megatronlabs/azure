@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namebase": {
+            "value": "fw-ncus-azure"
+        },
+        "vnetName": {
+            "value": "eus-vnet"
+        },
+        "managementInterfaceAddressBase":{
+            "value": "10.210.0."          
+        },
+        "untrustedInterfaceAddressBase": {
+            "value": "10.210.1."
+        },
+        "trustedInterfaceAddressBase": {
+            "value": "10.210.12."
+        },
+        "trustedDevInterfaceAddressBase": {
+            "value": "10.210.17."
+        },
+        "dmzInterfaceAddressBase": {
+            "value": "10.210.15."
+        },
+        "vmSize": {
+            "value": "Standard_D4_v2"
+        },
+        "quantity": {
+            "value": 2
+        },
+        "publicIpAddressManagementName": {
+            "value": "PaloManagementPIP"
+        },
+        "publicIpAddressUntrustedName": {
+            "value": "PaloUntrustedPIP"
+        },
+        "publicIpAddressType": {
+            "value": "Static"
+        },
+        "publicIpAddressSku": {
+            "value": "Basic"
+        },
+        "bootstrap": {
+            "value": "no"
+        },
+        "customData": {
+            "value": "storage-account=eusbootstrapsa,access-key=tBO/8eJOoEE8D1DFVeXYwYgjl03qZXaFritmGVXqSO1DezN4ID1zcixeUqbJGqvvj8FqxBDfghqzT6cT7sfggw==,file-share=bootstrapfiles,share-directory="
+        },
+        "adminUsername": {
+            "value": "paloadmin"
+        },
+        "adminPassword": {
+            "value": "P@55w0rd1234!"
+        }
+    }
+}

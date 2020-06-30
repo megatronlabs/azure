@@ -1,0 +1,441 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namebase": {
+            "type": "string",
+            "defaultValue":"eus-vnet",
+            "metadata":{
+                "description": "The name of the VNET."
+            }
+        },
+        "vnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.0.0/16",
+            "metadata":{
+                "description": "The overall address portion of the virtual network being constructed"
+            }
+        },
+        "managementSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.0.224/28",
+            "metadata":{
+                "description": "The CIDR for the management subnet"
+            }
+        },
+        "untrustedSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.1.0/24",
+            "metadata":{
+                "description": "The CIDR for the untrusted subnet"
+            }
+        },
+        "trustedFWSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.12.0/23",
+            "metadata":{
+                "description": "The CIDR for the trusted firewall subnet"
+            }
+        },
+        "trustedActualSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.10.0/23",
+            "metadata":{
+                "description": "The CIDR for the trusted actual subnet"
+            }
+        },
+        "trustedDevFWSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.17.0/24",
+            "metadata":{
+                "description": "The CIDR for the trusted Dev firewall subnet"
+            }
+        },
+        "trustedDevActualSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.16.0/24",
+            "metadata":{
+                "description": "The CIDR for the trusted dev actual subnet"
+            }
+        },
+        "dmzFWSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.15.0/24",
+            "metadata":{
+                "description": "The CIDR for the DMZ firewall subnet"
+            }
+        },
+        "dmzActualSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.14.0/24",
+            "metadata":{
+                "description": "The CIDR for the DMZ actual subnet"
+            }
+        },
+        "haFWSubnetAddressSpace":{
+            "type":"string",
+            "defaultValue":"10.210.0.208/28",
+            "metadata":{
+                "description": "The CIDR for the DMZ actual subnet"
+            }
+        },
+        "sourceTrustedIPAddress":{
+            "type":"string",
+            "defaultValue":"24.192.52.8",
+            "metadata":{
+                "description": "This is the IP address you will manage the devices from - change this to your public IP"
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "vnetName": "[concat(parameters('namebase'),'-vnet')]",
+        "managementSubnetName": "management",
+        "managementSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('managementSubnetName'))]",
+        "managementNsgName": "[concat(parameters('namebase'),'-',variables('managementSubnetName'),'-nsg')]",
+        "managementNsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('managementNsgName'))]",
+        "untrustedNsgName": "[concat(parameters('namebase'),'-untrusted-nsg')]",
+        "untrustedNsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('untrustedNsgName'))]",
+        "trustedNsgName": "[concat(parameters('namebase'),'-trusted-nsg')]",
+        "trustedNsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('trustedNsgName'))]",
+        "trustedDevNsgName": "[concat(parameters('namebase'),'-trusted-dev-nsg')]",
+        "trustedDevNsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('trustedDevNsgName'))]",
+        "dmzNsgName": "[concat(parameters('namebase'),'-dmz-nsg')]",
+        "dmzNsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('dmzNsgName'))]",
+        "haNsgName": "[concat(parameters('namebase'),'-ha-nsg')]",
+        "haNsgResourceId": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('haNsgName'))]",
+        "untrustedSubnetName": "untrusted",
+        "untrustedSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('untrustedSubnetName'))]",
+        "trustedFWSubnetName": "trusted-fw",
+        "trustedFWSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('trustedFWSubnetName'))]",
+        "trustedActualSubnetName": "trusted-actual",
+        "trustedActualSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('trustedActualSubnetName'))]",
+        "trustedDevFWSubnetName": "trusted-dev-fw",
+        "trustedDevFWSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('trustedDevFWSubnetName'))]",
+        "trustedDevActualSubnetName": "trusted-dev-actual",
+        "trustedDevActualSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('trustedDevActualSubnetName'))]",
+        "dmzFWSubnetName": "dmz-fw",
+        "dmzFWSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('dmzFWSubnetName'))]",
+        "dmzActualSubnetName": "dmz-actual",
+        "dmzActualSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('dmzActualSubnetName'))]",
+        "haFWSubnetName": "ha-fw",
+        "haFWSubnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('vnetName'),variables('haFWSubnetName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2019-11-01",
+            "name":"[variables('managementNsgName')]",
+            "location":"[variables('location')]",
+            "properties":{
+                "securityRules":[
+                    {
+                        "name":"HTTPS-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "443"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1000,
+                            "sourceAddressPrefix":"[parameters('sourceTrustedIPAddress')]",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*"
+                        }
+                    },
+                    {
+                        "name":"SSH-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "22"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1010,
+                            "sourceAddressPrefix": "[parameters('sourceTrustedIPAddress')]",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion":"2019-11-01",
+            "name":"[variables('untrustedNsgName')]",
+            "location":"[variables('location')]",
+            "properties":{
+                "securityRules":[
+                    {
+                        "name":"ALLOW-ANY-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "22-443"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1000,
+                            "sourceAddressPrefix":"*",
+                            "protocol": "*",
+                            "sourcePortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion":"2019-11-01",
+            "name":"[variables('trustedNsgName')]",
+            "location":"[variables('location')]",
+            "properties":{
+                "securityRules":[
+                    {
+                        "name":"ALLOW-ANY-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "22-443"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1000,
+                            "sourceAddressPrefix":"*",
+                            "protocol": "*",
+                            "sourcePortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+                {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion":"2019-11-01",
+            "name":"[variables('trustedDevNsgName')]",
+            "location":"[variables('location')]",
+            "properties":{
+                "securityRules":[
+                    {
+                        "name":"ALLOW-ANY-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "22-443"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1000,
+                            "sourceAddressPrefix":"*",
+                            "protocol": "*",
+                            "sourcePortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion":"2019-11-01",
+            "name":"[variables('dmzNsgName')]",
+            "location":"[variables('location')]",
+            "properties":{
+                "securityRules":[
+                    {
+                        "name":"ALLOW-ANY-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "22-443"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1000,
+                            "sourceAddressPrefix":"*",
+                            "protocol": "*",
+                            "sourcePortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+                {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion":"2019-11-01",
+            "name":"[variables('haNsgName')]",
+            "location":"[variables('location')]",
+            "properties":{
+                "securityRules":[
+                    {
+                        "name":"ALLOW-ANY-INBOUND",
+                        "properties":{
+                            "access":"Allow",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRanges":[
+                                "22-443"
+                            ],
+                            "direction":"Inbound",
+                            "priority": 1000,
+                            "sourceAddressPrefix":"*",
+                            "protocol": "*",
+                            "sourcePortRange": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion":"2019-11-01",
+            "name":"[variables('vnetName')]",
+            "location":"[variables('location')]",
+            "dependsOn":[
+                "[variables('managementNsgResourceId')]",
+                "[variables('trustedNsgResourceId')]",
+                "[variables('trustedDevNsgResourceId')]",
+                "[variables('untrustedNsgResourceId')]",
+                "[variables('dmzNsgResourceId')]",
+                "[variables('haNsgResourceId')]"
+            ],
+            "properties":{
+                "addressSpace":{
+                    "addressPrefixes":[
+                        "[parameters('vnetAddressSpace')]"
+                    ]
+                },
+                "subnets":[
+                    {
+                        "name":"[variables('managementSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('managementSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id":"[variables('managementNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('untrustedSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('untrustedSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('untrustedNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('trustedFWSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('trustedFWSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('trustedNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('trustedActualSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('trustedActualSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('trustedNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('trustedDevFWSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('trustedDevFWSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('trustedDevNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('trustedDevActualSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('trustedDevActualSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('trustedDevNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('dmzFWSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('dmzFWSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('dmzNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('haFWSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('haFWSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('haNsgResourceId')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "[variables('dmzActualSubnetName')]",
+                        "properties":{
+                            "addressPrefix":"[parameters('dmzActualSubnetAddressSpace')]",
+                            "networkSecurityGroup":{
+                                "id": "[variables('dmzNsgResourceId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "vnetname": {
+            "type":"string",
+            "value":"[variables('vnetName')]"
+        },
+        "vnetResourceId":{
+            "type":"string",
+            "value":"[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]"
+        },
+        "managementSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('managementSubnetResourceId')]"
+        },
+        "untrustedSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('untrustedSubnetResourceId')]"
+        },
+        "trustedFWSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('trustedFWSubnetResourceId')]"
+        },
+        "trustedActualSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('trustedActualSubnetResourceId')]"
+        },
+        "trustedDevFWSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('trustedDevFWSubnetResourceId')]"
+        },
+        "trustedDevActualSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('trustedDevActualSubnetResourceId')]"
+        },
+        "dmzFWSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('dmzFWSubnetResourceId')]"
+        },
+        "dmzActualSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('dmzActualSubnetResourceId')]"
+        },
+                "haFWSubnetResourceId":{
+            "type":"string",
+            "value":"[variables('haFWSubnetResourceId')]"
+        }
+    }
+}

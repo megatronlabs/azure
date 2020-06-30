@@ -1,0 +1,486 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namebase": {
+            "type": "string",
+            "defaultValue": "paloalto",
+            "metadata":{
+                "description": "The name of the Virtual Machine."
+            }
+        },
+        "vnetName":{
+            "type":"string",
+            "defaultValue":"vnet",
+            "metadata":{
+                "description":"The name of the network to put this VM on."
+            }
+        },
+        "managementInterfaceAddressBase":{
+            "type":"string",
+            "defaultValue":"10.210.0.",
+            "metadata":{
+                "description":"This is the IP Address you will use to manage the device."
+            }                
+        },
+        "untrustedInterfaceAddressBase":{
+            "type":"string",
+            "defaultValue":"10.210.1",
+            "metadata":{
+                "description":"This is the IP Address that will be assinged to the Untrusted Interface."
+            }                
+        },
+        "trustedInterfaceAddressBase":{
+            "type":"string",
+            "defaultValue":"10.210.12.",
+            "metadata":{
+                "description":"This is the IP Address that will be assinged to the Trusted Prod Interface."
+            }                
+        },
+        "trustedDevInterfaceAddressBase":{
+            "type":"string",
+            "defaultValue":"10.210.17.",
+            "metadata":{
+                "description":"This is the IP Address that will be assinged to the Trusted Dev Interface."
+            }                
+        },
+        "dmzInterfaceAddressBase":{
+            "type":"string",
+            "defaultValue":"10.210.15.",
+            "metadata":{
+                "description":"This is the IP Address that will be assinged to the Trusted DMZ Interface."
+            }                
+        },
+                "haInterfaceAddressBase":{
+            "type":"string",
+            "defaultValue":"10.210.0.",
+            "metadata":{
+                "description":"This is the IP Address that will be assinged to the HA Interface."
+            }                
+        },
+        "vmSize":{
+            "type":"string",
+            "defaultValue": "Standard_D3_v2",
+            "allowedValues":[
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D3_v2",
+                "Standard_D4_v2",
+                "Standard_A4",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2"
+            ]
+        },
+        "quantity":{
+            "type":"int",
+            "defaultValue": 1,
+            "minValue": 1,
+            "maxValue": 2,
+            "metadata":{
+                "description": "The number of firewalls to make."
+            }
+        },
+        "bootstrap": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Pass bootstrap data to VM"
+            }
+        },
+        "customData": {
+            "type": "string",
+            "defaultValue": "storage-account=eusbootstrapsa,access-key=tBO/8eJOoEE8D1DFVeXYwYgjl03qZXaFritmGVXqSO1DezN4ID1zcixeUqbJGqvvj8FqxBDfghqzT6cT7sfggw==,file-share=bootstrapfiles,share-directory=None",
+            "metadata": {
+                "description": "String passed down to the Virtual Machine."
+            }
+        },
+        "publicIpAddressManagementName": {
+            "type": "string",
+            "defaultValue": "PaloManagementPIP"
+        },
+        "publicIpAddressUntrustedName": {
+            "type": "string",
+            "defaultValue": "PaloUntrustedPIP"
+        },
+        "publicIpAddressType": {
+            "type": "string",
+            "defaultValue": "Static"
+        },
+        "publicIpAddressSku": {
+            "type": "string",
+            "defaultValue": "Basic"
+        },
+        "adminUsername":{
+            "type":"string",
+            "defaultValue":"cyberadmin",
+            "metadata":{
+                "description":"The name of the admin user. It cannot be 'admin' or 'administrator'."
+            }
+        },
+        "adminPassword":{
+            "type":"securestring",
+            "defaultValue":"PutYourPasswordHere!",
+            "metadata":{
+                "description":"The admin password"
+            }
+            }
+        },
+    "variables":{
+        "location":"[resourceGroup().location]",
+        "saname":"[replace(concat(toLower(parameters('namebase')),'sadiag'),'-','')]",
+        "sadiagResourceId":"[resourceId('Microsoft.Storage/storageAccounts',variables('saname'))]",
+        "diagSAURI": "[concat('https','://',variables('saname'),'.blob.core.windows.net','/')]",
+        "vmnamebase":"[concat(parameters('namebase'),'vm')]",
+        "avsetname":"[concat(variables('vmnamebase'),'-avset')]",
+        "avsetResourceId":"[resourceId('Microsoft.Compute/availabilitySets',variables('avsetname'))]",
+        "managementSubnetResourceId":"[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('vnetName'),'management')]",
+        "untrustSubnetResourceId":"[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('vnetName'),'untrusted')]",
+        "trustSubnetResourceId":"[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('vnetName'),'trusted-fw')]",
+        "trustDevSubnetResourceId":"[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('vnetName'),'trusted-dev-fw')]",
+        "dmzSubnetResourceId":"[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('vnetName'),'dmz-fw')]",
+        "haSubnetResourceId":"[resourceId('Microsoft.Network/virtualNetworks/subnets',parameters('vnetName'),'ha-fw')]"
+    },
+    "resources":[
+        {
+            "type":"Microsoft.Storage/storageAccounts",
+            "apiVersion":"2019-06-01",
+            "comments":"The diagnostics storage account",
+            "name":"[variables('saname')]",
+            "location":"[variables('location')]",
+            "kind":"StorageV2",
+            "sku":{
+                "name":"Standard_LRS",
+                "tier":"Standard"
+            },
+            "properties":{
+                "accessTier":"Hot",
+                "supportsHttpsTrafficOnly":true
+            }
+        },
+        {
+            "type":"Microsoft.Compute/availabilitySets",
+            "apiVersion":"2019-07-01",
+            "name":"[variables('avsetname')]",
+            "location":"[variables('location')]",
+            "sku":{
+                "name":"Aligned"
+            },
+            "properties":{
+                "platformFaultDomainCount":3,
+                "platformUpdateDomainCount":5
+            }
+        },
+        {
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2019-11-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1),'-nic-mgt')]",
+            "location":"[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIpAddresses/', concat(parameters('publicIpAddressManagementName'),'-',copyIndex(0)))]"
+            ],
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties":{
+                "ipConfigurations":[
+                    {
+                        "name":"ipconfig0",
+                        "properties":{
+                            "primary":true,
+                            "privateIPAllocationMethod":"Static",
+                            "privateIPAddress":"[concat(parameters('managementInterfaceAddressBase'),add(236,copyIndex(0)))]",
+                            "subnet":{
+                                "id":"[variables('managementSubnetResourceId')]"
+                            },
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('publicIpAddressManagementName'),'-',copyIndex(0)))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(parameters('publicIpAddressManagementName'),'-',copyIndex(0))]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2019-11-01",
+            "location":"[variables('location')]",
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties": {
+                "publicIpAllocationMethod": "[parameters('publicIpAddressType')]"
+            },
+            "sku": {
+                "name": "[parameters('publicIpAddressSku')]"
+            }
+        },
+        {
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2019-11-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1),'-nic-unt')]",
+            "location":"[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIpAddresses/', concat(parameters('publicIpAddressUntrustedName'),'-',copyIndex(0)))]"
+            ],
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties":{
+                "ipConfigurations":[
+                    {
+                        "name":"ipconfig1",
+                        "properties":{
+                            "primary":true,
+                            "privateIPAllocationMethod":"Static",
+                            "privateIPAddress":"[concat(parameters('untrustedInterfaceAddressBase'),add(252,copyIndex(0)))]",
+                            "subnet":{
+                                "id":"[variables('untrustSubnetResourceId')]"
+                            },
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIpAddresses', concat(parameters('publicIpAddressUntrustedName'),'-',copyIndex(0)))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(parameters('publicIpAddressUntrustedName'),'-',copyIndex(0))]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2019-11-01",
+            "location":"[variables('location')]",
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties": {
+                "publicIpAllocationMethod": "[parameters('publicIpAddressType')]"
+            },
+            "sku": {
+                "name": "[parameters('publicIpAddressSku')]"
+            }
+        },
+        {
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2019-11-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1),'-nic-trs')]",
+            "location":"[variables('location')]",
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties":{
+                "ipConfigurations":[
+                    {
+                        "name":"ipconfig2",
+                        "properties":{
+                            "primary":true,
+                            "privateIPAllocationMethod":"Static",
+                            "privateIPAddress":"[concat(parameters('trustedInterfaceAddressBase'),add(252,copyIndex(0)))]",
+                            "subnet":{
+                                "id":"[variables('trustSubnetResourceId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2019-11-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1),'-nic-dev')]",
+            "location":"[variables('location')]",
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties":{
+                "ipConfigurations":[
+                    {
+                        "name":"ipconfig3",
+                        "properties":{
+                            "primary":true,
+                            "privateIPAllocationMethod":"Static",
+                            "privateIPAddress":"[concat(parameters('trustedDevInterfaceAddressBase'),add(252,copyIndex(0)))]",
+                            "subnet":{
+                                "id":"[variables('trustDevSubnetResourceId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2019-11-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1),'-nic-dmz')]",
+            "location":"[variables('location')]",
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties":{
+                "ipConfigurations":[
+                    {
+                        "name":"ipconfig4",
+                        "properties":{
+                            "primary":true,
+                            "privateIPAllocationMethod":"Static",
+                            "privateIPAddress":"[concat(parameters('dmzInterfaceAddressBase'),add(252,copyIndex(0)))]",
+                            "subnet":{
+                                "id":"[variables('dmzSubnetResourceId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2019-11-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1),'-nic-ha')]",
+            "location":"[variables('location')]",
+            "copy":{
+                "name":"nicLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Serial"
+            },
+            "properties":{
+                "ipConfigurations":[
+                    {
+                        "name":"ipconfig5",
+                        "properties":{
+                            "primary":true,
+                            "privateIPAllocationMethod":"Static",
+                            "privateIPAddress":"[concat(parameters('haInterfaceAddressBase'),add(220,copyIndex(0)))]",
+                            "subnet":{
+                                "id":"[variables('haSubnetResourceId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type":"Microsoft.Compute/virtualMachines",
+            "apiVersion":"2019-07-01",
+            "name":"[concat(variables('vmnamebase'),copyIndex(1))]",
+            "plan": {
+                "name": "byol",
+                "product": "vmseries-flex",
+                "publisher": "paloaltonetworks"
+            },
+            "location":"[variables('location')]",
+            "dependsOn":[
+                "[variables('avsetResourceId')]",
+                "[variables('sadiagResourceId')]",
+                "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-mgt'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-unt'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-trs'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-dev'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-dmz'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-ha'))]"
+                
+            ],
+            "copy":{
+                "name":"vmLoop",
+                "count":"[parameters('quantity')]",
+                "mode":"Parallel"
+            },
+            "properties":{
+                "availabilitySet":{
+                    "id":"[variables('avsetResourceId')]"
+                },
+                "diagnosticsProfile":{
+                    "bootDiagnostics":{
+                        "enabled":true,
+                        "storageUri":"[variables('diagSAURI')]"
+                    }
+                },
+                "hardwareProfile":{
+                    "vmSize":"[parameters('vmSize')]"
+                },
+                "networkProfile":{
+                    "networkInterfaces":[
+                        {
+                            "id":"[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-mgt'))]",
+                            "properties":{
+                                "primary":true
+                            }
+                        },
+                        {
+                            "id":"[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-unt'))]",
+                            "properties":{
+                                "primary":false
+                            }
+                        },
+                        {   
+                            "id":"[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-trs'))]",
+                            "properties":{
+                                "primary":false
+                            }
+                        },
+                        {   
+                            "id":"[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-dev'))]",
+                            "properties":{
+                                "primary":false
+                            }
+                        },
+                        {
+                            "id":"[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-dmz'))]",
+                            "properties":{
+                                "primary":false
+                            }
+                        },
+                                                {
+                            "id":"[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmnamebase'),copyIndex(1),'-nic-ha'))]",
+                            "properties":{
+                                "primary":false
+                            }
+                        }
+                    ]
+                },
+                "osProfile":{
+                    "adminUsername":"[parameters('adminUsername')]",
+                    "adminPassword":"[parameters('adminPassword')]",
+                    "computerName":"[concat(variables('vmnamebase'),copyIndex(1))]",
+                    "customData": "[if(equals(parameters('bootstrap'), 'no'), json('null'), base64(parameters('customData')))]"
+                },
+                "storageProfile":{
+                    "imageReference":{
+                        "publisher": "paloaltonetworks",
+                        "offer": "vmseries-flex",
+                        "sku": "byol",
+                        "version": "latest"
+                    },
+                    "osDisk":{
+                        "name":"[concat(concat(variables('vmnamebase'),copyIndex(1)),'-osDisk')]",
+                        "osType":"Linux",
+                        "createOption":"FromImage",
+                        "caching":"ReadWrite",
+                        "diskSizeGB":60,
+                        "managedDisk":{
+                            "storageAccountType":"StandardSSD_LRS"
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "outputs":{}
+}
