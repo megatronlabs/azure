@@ -93,7 +93,7 @@
         },
         "customData": {
             "type": "string",
-            "defaultValue": "storage-account=eusbootstrapsa,access-key=tBO/8eJOoEE8D1DFVeXYwYgjl03qZXaFritmGVXqSO1DezN4ID1zcixeUqbJGqvvj8FqxBDfghqzT6cT7sfggw==,file-share=bootstrapfiles,share-directory=None",
+            "defaultValue": "storage-account=examplestorageaccount,access-key=tBO/8CHANGEMEDUDEqbJGqvvj8THISISFAKEgw==,file-share=bootstrapfiles,share-directory=None",
             "metadata": {
                 "description": "String passed down to the Virtual Machine."
             }
