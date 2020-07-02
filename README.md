@@ -1,6 +1,3 @@
-# azure
-All things Azure
-
 # Deploy VNET
 
 The link below will deploy a VNET and multiple Subnets for a Palo Alto
