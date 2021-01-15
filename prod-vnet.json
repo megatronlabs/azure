@@ -11,35 +11,35 @@
         },
         "vnetAddressSpace":{
             "type":"string",
-            "defaultValue":"10.210.0.0/16",
+            "defaultValue":"10.100.0.0/16",
             "metadata":{
                 "description": "The overall address portion of the virtual network being constructed"
             }
         },
         "managementSubnetAddressSpace":{
             "type":"string",
-            "defaultValue":"10.210.0.224/28",
+            "defaultValue":"10.100.0.224/28",
             "metadata":{
                 "description": "The CIDR for the management subnet"
             }
         },
         "untrustedSubnetAddressSpace":{
             "type":"string",
-            "defaultValue":"10.210.1.0/24",
+            "defaultValue":"10.100.1.0/24",
             "metadata":{
                 "description": "The CIDR for the untrusted subnet"
             }
         },
         "trustedFWSubnetAddressSpace":{
             "type":"string",
-            "defaultValue":"10.210.12.0/23",
+            "defaultValue":"10.100.12.0/23",
             "metadata":{
                 "description": "The CIDR for the trusted firewall subnet"
             }
         },
         "trustedActualSubnetAddressSpace":{
             "type":"string",
-            "defaultValue":"10.210.10.0/23",
+            "defaultValue":"10.100.10.0/23",
             "metadata":{
                 "description": "The CIDR for the trusted actual subnet"
             }
@@ -60,7 +60,7 @@
         },
         "dmzFWSubnetAddressSpace":{
             "type":"string",
-            "defaultValue":"10.210.15.0/24",
+            "defaultValue":"10.100.15.0/24",
             "metadata":{
                 "description": "The CIDR for the DMZ firewall subnet"
             }
@@ -81,7 +81,7 @@
         },
         "sourceTrustedIPAddress":{
             "type":"string",
-            "defaultValue":"1.2.3.4/32",
+            "defaultValue":"68.32.2.183/32",
             "metadata":{
                 "description": "This is the IP address you will manage the devices from - change this to your public IP"
             }
