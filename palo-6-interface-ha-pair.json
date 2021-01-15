@@ -18,42 +18,42 @@
         },
         "managementInterfaceAddressBase":{
             "type":"string",
-            "defaultValue":"10.210.0.",
+            "defaultValue":"10.100.0.",
             "metadata":{
                 "description":"This is the IP Address you will use to manage the device."
             }                
         },
         "untrustedInterfaceAddressBase":{
             "type":"string",
-            "defaultValue":"10.210.1.",
+            "defaultValue":"10.100.1.",
             "metadata":{
                 "description":"This is the IP Address that will be assinged to the Untrusted Interface."
             }                
         },
         "trustedInterfaceAddressBase":{
             "type":"string",
-            "defaultValue":"10.210.12.",
+            "defaultValue":"10.100.12.",
             "metadata":{
                 "description":"This is the IP Address that will be assinged to the Trusted Prod Interface."
             }                
         },
         "trustedDevInterfaceAddressBase":{
             "type":"string",
-            "defaultValue":"10.210.17.",
+            "defaultValue":"10.100.17.",
             "metadata":{
                 "description":"This is the IP Address that will be assinged to the Trusted Dev Interface."
             }                
         },
         "dmzInterfaceAddressBase":{
             "type":"string",
-            "defaultValue":"10.210.15.",
+            "defaultValue":"10.100.15.",
             "metadata":{
                 "description":"This is the IP Address that will be assinged to the Trusted DMZ Interface."
             }                
         },
                 "haInterfaceAddressBase":{
             "type":"string",
-            "defaultValue":"10.210.0.",
+            "defaultValue":"10.100.0.",
             "metadata":{
                 "description":"This is the IP Address that will be assinged to the HA Interface."
             }                
