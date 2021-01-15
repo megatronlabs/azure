@@ -20,43 +20,43 @@
         },
         "trustedInterfaceIP":{
             "type": "string",
-            "defaultValue":"10.210.12.253"
+            "defaultValue":"10.100.12.253"
         },
         "trustedDevInterfaceIP":{
             "type": "string",
-            "defaultValue":"10.210.17.253"
+            "defaultValue":"10.100.17.253"
         },
         "dmzInterfaceIP":{
             "type": "string",
-            "defaultValue":"10.210.15.253"
+            "defaultValue":"10.100.15.253"
         },
         "trustedFWSubnetAddressSpace":{
             "type": "string",
-            "defaultValue":"10.210.12.0/23"
+            "defaultValue":"10.100.12.0/23"
         },
         "trustedActualSubnetAddressSpace":{
             "type": "string",
-            "defaultValue":"10.210.10.0/23"
+            "defaultValue":"10.100.10.0/23"
         },
         "trustedDevFWSubnetAddressSpace":{
             "type": "string",
-            "defaultValue":"10.210.17.0/24"
+            "defaultValue":"10.100.17.0/24"
         },
         "trustedDevActualSubnetAddressSpace":{
             "type": "string",
-            "defaultValue":"10.210.16.0/24"
+            "defaultValue":"10.100.16.0/24"
         },
         "dmzFWSubnetAddressSpace":{
             "type": "string",
-            "defaultValue": "10.210.15.0/24"
+            "defaultValue": "10.100.15.0/24"
         },
         "dmzActualSubnetAddressSpace":{
             "type": "string",
-            "defaultValue": "10.210.14.0/24"
+            "defaultValue": "10.100.14.0/24"
         },
         "vnetAddressSpace":{
             "type": "string",
-            "defaultValue": "10.210.0.0/16"
+            "defaultValue": "10.100.0.0/16"
         }
     },
     "resources": [
